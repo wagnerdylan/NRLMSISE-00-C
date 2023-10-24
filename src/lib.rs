@@ -4,7 +4,7 @@
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
-struct NRLMSISEInput {
+pub struct NRLMSISEInput {
     pub year: i32,
     pub doy: i32,
     pub sec: f64,
@@ -15,16 +15,16 @@ struct NRLMSISEInput {
     pub f107A: f64,
     pub f107: f64,
     pub ap: f64,
-    pub ap_a: [f64; 7usize], 
+    pub ap_a: [f64; 7usize],
 }
 
-struct NRLMSISEFlags {
+pub struct NRLMSISEFlags {
     pub switches: [i32; 24usize],
     pub sw: [f64; 24usize],
     pub swc: [f64; 24usize],
 }
 #[derive(Debug)]
-struct NRLMSISEOutput {
+pub struct NRLMSISEOutput {
     pub TINF: f64,
     pub TG: f64,
     pub HE: f64,
@@ -35,10 +35,10 @@ struct NRLMSISEOutput {
     pub H: f64,
     pub N: f64,
     pub ANM: f64,
-    pub rho: f64
+    pub rho: f64,
 }
 
-fn gtd7_safe(input: &mut NRLMSISEInput, flags: &NRLMSISEFlags) -> NRLMSISEOutput {
+pub fn gtd7_safe(input: &mut NRLMSISEInput, flags: &NRLMSISEFlags) -> NRLMSISEOutput {
     let mut input_c_form = nrlmsise_input {
         year: input.year,
         doy: input.doy,
@@ -50,7 +50,7 @@ fn gtd7_safe(input: &mut NRLMSISEInput, flags: &NRLMSISEFlags) -> NRLMSISEOutput
         f107A: input.f107A,
         f107: input.f107,
         ap: input.ap,
-        ap_a: &mut ap_array{ a: input.ap_a } as *mut _, 
+        ap_a: &mut ap_array { a: input.ap_a } as *mut _,
     };
 
     let mut flags_c_form = nrlmsise_flags {
@@ -63,10 +63,16 @@ fn gtd7_safe(input: &mut NRLMSISEInput, flags: &NRLMSISEFlags) -> NRLMSISEOutput
         d: [0f64; 9usize],
         t: [0f64; 2usize],
     };
-    
-    unsafe{ gtd7(&mut input_c_form as *mut _, &mut flags_c_form as *mut _, &mut output_c_form as *mut _); }
 
-    NRLMSISEOutput{
+    unsafe {
+        gtd7(
+            &mut input_c_form as *mut _,
+            &mut flags_c_form as *mut _,
+            &mut output_c_form as *mut _,
+        );
+    }
+
+    NRLMSISEOutput {
         TINF: output_c_form.t[0],
         TG: output_c_form.t[1],
         HE: output_c_form.d[0],
@@ -90,8 +96,8 @@ mod tests {
 
     #[test]
     fn gtd7_01_unsafe() {
-        let mut aph = ap_array{
-            a: [0.0f64; 7usize]
+        let mut aph = ap_array {
+            a: [0.0f64; 7usize],
         };
 
         let mut flags = nrlmsise_flags {
@@ -102,7 +108,7 @@ mod tests {
 
         flags.switches[0] = 0;
 
-        let mut input = nrlmsise_input{
+        let mut input = nrlmsise_input {
             year: 0,
             doy: 172,
             sec: 29000f64,
@@ -113,16 +119,21 @@ mod tests {
             f107A: 150f64,
             f107: 150f64,
             ap: 4f64,
-            ap_a: &mut aph as *mut _, 
+            ap_a: &mut aph as *mut _,
         };
 
         let mut output = nrlmsise_output {
             d: [0f64; 9usize],
             t: [0f64; 2usize],
         };
-        
-        unsafe{ gtd7(&mut input as *mut _, &mut flags as *mut _, &mut output as *mut _); }
 
+        unsafe {
+            gtd7(
+                &mut input as *mut _,
+                &mut flags as *mut _,
+                &mut output as *mut _,
+            );
+        }
     }
 
     #[test]
@@ -150,6 +161,5 @@ mod tests {
         };
 
         let output = gtd7_safe(&mut input, &flags);
-
     }
 }
